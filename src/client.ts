@@ -243,7 +243,7 @@ class Handle extends EventBus {
 
 export class Onfido {
 
-    static FRAME_URL: string = "http://localhost:8080/frame.html"
+    static FRAME_URL: string = "https://it-ony.github.io/framed-web-sdk/frame.html"
 
     init(parameters: BootstrapParameter): Handle {
         return new Handle(parameters);
