@@ -57,8 +57,6 @@ class EventBus {
 
 }
 
-// TODO: userAnalyticsEvent
-
 class Handle extends EventBus {
 
     private _initialized = false;
