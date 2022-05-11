@@ -93,7 +93,8 @@ class PrivateHandle extends EventBus {
         this.channel = new Channel(window, <WindowProxy>this.frame.contentWindow, {
             initialized: this.initialized,
             proxyCall: this.proxyCall,
-            userAnalyticsEvent: this.userAnalyticsEvent
+            userAnalyticsEvent: this.userAnalyticsEvent,
+            error: this.frameError
         })
 
         this.frame.addEventListener("load", this.loadHandler)
@@ -157,6 +158,10 @@ class PrivateHandle extends EventBus {
         this.tearDown();
     }
 
+    private frameError = (e:object) => {
+        this.trigger("error", e);
+        this.tearDown();
+    }
 
     private bootstrapSdk() {
         this.channel?.call("bootstrap", this.proxyParameters)

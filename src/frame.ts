@@ -1,7 +1,9 @@
 import { Channel } from "./channel";
 
 type Sdk = {
-    version: string
+    version: string,
+    error?: object,
+    parameter?: object
 }
 
 type SdkParameter = Record<string, any>
@@ -50,7 +52,6 @@ const filterParameterKeys:string[] = ['containerId', 'containerEl'];
     const sdkLoader = loadScript(`${basePath}/onfido.min.js`)
     const channel = new Channel(window, window.parent, {
         bootstrap: async (proxyParameter: Record<string, any>) => {
-            console.log("bootstrap called")
 
             const mapped: any[] = Object.entries(proxyParameter)
                 .filter(([key]) => {
@@ -80,8 +81,6 @@ const filterParameterKeys:string[] = ['containerId', 'containerEl'];
                 containerEl: document.body
             })
 
-            console.log(parameter)
-
             await sdkLoader;
 
             document.querySelector("#spinner")?.remove()
@@ -89,7 +88,11 @@ const filterParameterKeys:string[] = ['containerId', 'containerEl'];
         }
     })
 
-    channel.call("initialized");
+    if (sdk.error) {
+        channel.call("error", sdk.error)
+    } else {
+        channel.call("initialized");
+    }
 
     function loadCss(href: string) {
         const link = document.createElement("link");
