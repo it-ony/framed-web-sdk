@@ -57,11 +57,12 @@ class EventBus {
 
 }
 
-class Handle extends EventBus {
+
+class PrivateHandle extends EventBus {
 
     private _initialized = false;
     private _initializationTimer?: number;
-    private _tearedDown = true;
+    private _tearedDown = false;
 
     private frame?: HTMLIFrameElement;
     private channel?: Channel;
@@ -85,7 +86,7 @@ class Handle extends EventBus {
 
         let url = parameters.url || Onfido.FRAME_URL;
 
-        this.frame = Handle.createFrame(url)
+        this.frame = PrivateHandle.createFrame(url)
 
         mount.appendChild(this.frame);
 
@@ -99,7 +100,6 @@ class Handle extends EventBus {
         this.frame.addEventListener("error", this.errorHandler)
 
     }
-
 
 
     public tearDown() {
@@ -139,7 +139,6 @@ class Handle extends EventBus {
         this._initialized = true;
         this._initializationTimer && window.clearTimeout(this._initializationTimer);
 
-        console.log("frame send message initialized");
         this.bootstrapSdk();
     }
 
@@ -174,7 +173,7 @@ class Handle extends EventBus {
     }
 
     private userAnalyticsEvent = (details: any) => {
-        window.dispatchEvent(new CustomEvent("userAnalyticsEvent", {detail: details}));
+        window.dispatchEvent(new CustomEvent("userAnalyticsEvent", { detail: details }));
     }
 
     private static createFrame(url: string) {
@@ -239,12 +238,32 @@ class Handle extends EventBus {
     }
 }
 
+
+export type Handle = {
+    tearDown: () => void,
+    addEventListener: (name: string, listener: Listener) => void,
+    removeEventListener: (name: string, listener: Listener) => void
+}
+
 export class Onfido {
 
     static FRAME_URL: string = "https://it-ony.github.io/framed-web-sdk/frame.html"
 
     init(parameters: BootstrapParameter): Handle {
-        return new Handle(parameters);
+        const handle = new PrivateHandle(parameters);
+
+        return {
+            tearDown: () => {
+                return handle.tearDown()
+            },
+            addEventListener: (name: string, listener: Listener) => {
+                return handle.addEventListener(name, listener);
+
+            },
+            removeEventListener: (name: string, listener: Listener) => {
+                return handle.removeEventListener(name, listener)
+            }
+        };
     }
 
 }
