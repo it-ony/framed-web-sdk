@@ -14,26 +14,67 @@ by onfido, so we can deliver the latest version of the SDK to the customers with
 1. Embed the client javascript, `<script src="https://it-ony.github.io/framed-web-sdk/client.js"></script>` in your html page. Do not deliver this javascript by
 yourself, as we ensure it's always up to date and delivered fast via a cdn.
 2. call `const handle = Onfido.init(parameter)` with an object. All parameters documented [here](https://github.com/onfido/onfido-sdk-ui#6-initialize-the-sdk) are supported.
-   
-At least a [SDK token](https://github.com/onfido/onfido-sdk-ui#3-generate-an-sdk-token) needs to be passed as `token` in the parameter object.
 
-## Additional parameters
+## custom css
 
-### client slug, clientId
-
-* `clientId` - you can pass the clientId, to get theming support. Go to the Dashboard to control the look and feel of the SDK.
-* `clientSlug` - if you have setup a subdomain, you can also use this instead of the clientId to keep your clientId private
-
-### custom css
-
-As we run the sdk within an iframe to secure your applicants most, you can style the content in the iframe to your needs by passing 
-custom css via the `css` parameter. 
+As we run the sdk within an iframe to secure your applicants most, you can style the content in the iframe to your needs by passing custom css via
+the `css` parameter.
 
 ## tearing down
 
-To tear down the sdk, use the handle object returned from the `Onfido.init` method and call `handle.tearDown()` to remove the SDK from 
-your webpage.
+To tear down the sdk, use the handle object returned from the `Onfido.init` method and call `handle.tearDown()` to remove the SDK from your webpage.
 
+# Modes of operation
+## static
+         
+This is the old way of the web sdk, where the parameters and steps are pre-assigned and there is no workflow evaluated 
+behind the scenes. Use this mode, if you do not have access to studio.
+
+For this mode at least a [SDK token](https://github.com/onfido/onfido-sdk-ui#3-generate-an-sdk-token) needs to be passed 
+as `token` in the parameter object.
+
+```js
+window.handle = Onfido.init({
+    token: "<YOUR SDK TOKEN>" // https://github.com/onfido/onfido-sdk-ui#3-generate-an-sdk-token
+});
+```
+                                                                                                
+## workflow
+
+With orchestration onfido offers a more dynamic and flexible way of sending the user through the required steps. The best
+way of using orchestration is to make use out of workflow_links.
+
+Therefore create a workflow link via the api first
+
+```http request
+POST https://api.<region>.onfido.com/v4/workflow_links
+Content-Type: application/json
+Authorization: Token token=<YOUR API KEY>
+
+{
+    "workflow_id": "<WORKFLOW_ID>",
+}
+```
+
+Then use the id of the response payload
+
+```json
+{
+    "id": "<ID>",
+    "applicant_id": "<APPLICANT_ID>",
+    "expires": "2022-06-26T12:56:25.547952",
+    "url": "https://studio.eu.onfido.app/l/<ID>",
+    "workflow_id": "<WORKFLOW_ID>"
+}
+```
+
+to bootstrap the sdk with the following javascript code
+
+```js
+window.handle = Onfido.init({
+    workflowLinkId: "<ID>"
+});
+```
 
 # Example
      
