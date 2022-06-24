@@ -1,11 +1,16 @@
 import { Channel } from "./channel";
 import { ProxyMethodCall } from "./frame";
 
+type Region = 'EU' | 'US' | 'CA'
+
 type BootstrapParameter = {
+    token?: string,
     url?: string,
     clientId?: string,
     containerId?: string,
-    containerEl?: Element
+    containerEl?: Element,
+    workflowLinkId?: string,
+    region?: Region
 } & Record<string, any>
 
 type Listener = (event: object) => void
@@ -76,6 +81,8 @@ class PrivateHandle extends EventBus {
     constructor(parameters: BootstrapParameter) {
         super()
 
+        PrivateHandle.validateParameters(parameters);
+
         this._options = parameters;
 
         const [proxyParameters, proxy] = this.createProxyParameters(parameters)
@@ -84,7 +91,11 @@ class PrivateHandle extends EventBus {
 
         const mount = this.getMount(parameters);
 
-        let url = parameters.url || Onfido.FRAME_URL;
+        let url = (parameters.url || Onfido.FRAME_URL).replace("<region>", parameters.region!.toLowerCase());
+
+        if (parameters.workflowLinkId) {
+            url = `${url}/${parameters.workflowLinkId}`
+        }
 
         this.frame = PrivateHandle.createFrame(url)
 
@@ -219,7 +230,7 @@ class PrivateHandle extends EventBus {
 
     private createProxyParameters(parameters: BootstrapParameter): [Record<string, any>, Record<string, (...args: any[]) => void>] {
 
-        const skipKeys = ["containerId", "containerEl"]
+        const skipKeys = ["containerId", "containerEl", "workflowLinkId", "region"]
 
         const proxy: Record<string, (...args: any[]) => void> = {}
 
@@ -241,6 +252,25 @@ class PrivateHandle extends EventBus {
         return [proxyParameters, proxy]
 
     }
+
+    private static validateParameters(parameters: BootstrapParameter) {
+
+        const token = `'token'`;
+        const workflowLinkId = `'workflowLinkId'`;
+
+        if (!parameters.token && !parameters.workflowLinkId) {
+            throw new Error(`${token} or ${workflowLinkId} needs to be present.`)
+        }
+
+        if (parameters.token && parameters.workflowLinkId) {
+            throw new Error(`Only one of [${token}, ${workflowLinkId}] can be provided.`)
+        }
+
+        if (parameters.workflowLinkId && !parameters.region) {
+            throw new Error(`${workflowLinkId} required to provide the 'region' as well.`)
+        }
+
+    }
 }
 
 
@@ -252,7 +282,7 @@ export type Handle = {
 
 export class Onfido {
 
-    static FRAME_URL: string = "https://it-ony.github.io/framed-web-sdk/frame.html"
+    static FRAME_URL: string = "https://sdk.<region>.onfido.app/frame"
 
     init(parameters: BootstrapParameter): Handle {
         const handle = new PrivateHandle(parameters);

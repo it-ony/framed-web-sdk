@@ -17,7 +17,8 @@ type OnfidoSdk = {
 
 type W = {
     sdk: Sdk,
-    Onfido: OnfidoSdk
+    Onfido: OnfidoSdk,
+    handle: OnfidoSdkHandle
 } & Window
 
 export type ProxyMethodCall = {
@@ -39,7 +40,7 @@ const parameterHandler: Record<string, (key: string, value: any) => void | [stri
     }
 };
 
-const filterParameterKeys:string[] = ['containerId', 'containerEl'];
+const filterParameterKeys:string[] = ['containerId', 'containerEl', 'workflowLinkId'];
 
 ((window: W, document: Document) => {
 
@@ -76,7 +77,7 @@ const filterParameterKeys:string[] = ['containerId', 'containerEl'];
                 })
                 .filter(x => x !== undefined)
 
-            const parameter = Object.assign({}, Object.fromEntries(mapped), {
+            const parameter = Object.assign({}, Object.fromEntries(mapped), sdk.parameter, {
                 // properties to always overwrite
                 containerEl: document.body
             })
@@ -84,7 +85,7 @@ const filterParameterKeys:string[] = ['containerId', 'containerEl'];
             await sdkLoader;
 
             document.querySelector("#spinner")?.remove()
-            window.Onfido.init(parameter)
+            window.handle = window.Onfido.init(parameter)
         }
     })
 
