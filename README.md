@@ -11,7 +11,7 @@ by onfido, so we can deliver the latest version of the SDK to the customers with
 # How to use it
 ## Embedding and initialization
 
-1. Embed the client javascript, `<script src="https://it-ony.github.io/framed-web-sdk/client.js"></script>` in your html page. Do not deliver this javascript by
+1. Embed the client javascript, `<script src="https://assets.onfido.com/web-sdk-client/client.js"></script>` in your html page. Do not deliver this javascript by
 yourself, as we ensure it's always up to date and delivered fast via a cdn.
 2. call `const handle = Onfido.init(parameter)` with an object. All parameters documented [here](https://github.com/onfido/onfido-sdk-ui#6-initialize-the-sdk) are supported.
 
@@ -85,7 +85,7 @@ window.handle = Onfido.init({
     <meta charset="UTF-8">
 </head>
 <body>
-    <script src="https://it-ony.github.io/framed-web-sdk/client.js"></script>
+    <script src="https://assets.onfido.com/web-sdk-client/client.js"></script>
     <script>
         window.handle = Onfido.init({
             token: "<YOUR SDK TOKEN>",
