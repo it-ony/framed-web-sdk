@@ -1,0 +1,47 @@
+name: Test
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: 'npm'
+
+      - uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '11'
+
+      - uses: actions/checkout@v3
+        with:
+          repository: it-ony/webtest
+          path: webtest
+
+      - name: Build webtest
+        run: cd webtest && mvn --no-transfer-progress clean install && cd ..
+
+      - name: Setup Chromedriver
+        uses: nanasess/setup-chromedriver@v1
+
+      - name: Prepare test server
+        run: |
+          npm ci
+          npm run build:test
+
+      - uses: isbang/compose-action@v1.2.0
+
+      - name: run tests
+        working-directory: ./test/webtest
+        env:
+          BUILD: ${{ github.ref }}-${{ github.run_id }}
+          API_TOKEN: ${{ secrets.API_TOKEN }}
+        run: |
+          mvn --no-transfer-progress clean verify -Dbrowser=chrome -DthreadCount=10 -Denvironment=headless
+  
