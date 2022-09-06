@@ -4,7 +4,7 @@ on:
     types: [ opened, synchronize, reopened ]
 
 jobs:
-  test:
+  chrome:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -44,4 +44,58 @@ jobs:
           API_TOKEN: ${{ secrets.API_TOKEN }}
         run: |
           mvn --no-transfer-progress clean verify -Dbrowser=chrome -DthreadCount=10 -Denvironment=headless
-  
+
+  browserstack:
+    runs-on: ubuntu-latest
+    env:
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+      BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
+      BROWSERSTACK_LOCAL_BINARY: /tmp/browserstacklocal
+      BUILD: ${{ github.ref }}-${{ github.run_id }}
+      API_TOKEN: ${{ secrets.API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: 'npm'
+
+      - uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '11'
+
+      - uses: actions/checkout@v3
+        with:
+          repository: it-ony/webtest
+          path: webtest
+
+      - name: Build webtest
+        run: cd webtest && mvn --no-transfer-progress clean install && cd ..
+
+      - name: Prepare test server
+        run: |
+          npm ci
+          npm run build:test
+
+      - name: Download local browserstack
+        id: download-browserstack
+        run: curl -o /tmp/browserstacklocal https://bstack-local-prod.s3.amazonaws.com/BrowserStackLocal-linux-x64 && chmod 777 /tmp/browserstacklocal
+
+      - uses: isbang/compose-action@v1.2.0
+
+      - name: Firefox
+        working-directory: ./test/webtest
+        run: |
+          mvn --no-transfer-progress clean verify -DthreadCount=2 -Denvironment=browserstack -Dbrowser=firefox
+
+      - name: Edge
+        working-directory: ./test/webtest
+        run: |
+          mvn --no-transfer-progress clean verify -DthreadCount=2 -Denvironment=browserstack -Dbrowser=edge
+
+      - name: Safari
+        working-directory: ./test/webtest
+        run: |
+          mvn --no-transfer-progress clean verify -DthreadCount=2 -Denvironment=browserstack -Dbrowser=safari
