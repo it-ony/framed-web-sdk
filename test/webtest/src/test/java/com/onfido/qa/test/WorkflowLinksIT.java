@@ -6,9 +6,11 @@ import com.onfido.qa.client.dto.ApplicantRequest;
 import com.onfido.qa.client.dto.WorkflowLinkRequest;
 import com.onfido.qa.framedsdk.FramedPage;
 import com.onfido.qa.websdk.page.Complete;
+import com.onfido.qa.websdk.page.UserConsent;
 import com.onfido.qa.websdk.page.Welcome;
 import com.onfido.sdk.Raw;
 import org.openqa.selenium.JavascriptException;
+import org.openqa.selenium.TimeoutException;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -67,7 +69,16 @@ public class WorkflowLinksIT extends FramedWebSdkIT {
         var driver = driver();
 
         framedPage.inner(() -> {
-            new Welcome(driver).continueToNextStep(Complete.class);
+            new Welcome(driver).continueToNextStep();
+
+            try {
+                new UserConsent(driver).acceptUserConsent(null);
+            } catch (TimeoutException ignored) {
+                // user consent screen is showing up, depending on the location of the browser
+            }
+
+            // wait for the complete screen
+            new Complete(driver);
         });
 
         var completeData = framedPage.getCompleteData();
