@@ -44,7 +44,6 @@ jobs:
 
       - name: run tests
         working-directory: ./test/webtest
-        continue-on-error: true
         env:
           BUILD: ${{ github.ref }}-${{ github.run_id }}
         run: |
