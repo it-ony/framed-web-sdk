@@ -3,6 +3,11 @@ on:
   pull_request:
     types: [ opened, synchronize, reopened ]
 
+env:
+  API_TOKEN_EU: ${{ secrets.API_TOKEN_EU }}
+  API_TOKEN_US: ${{ secrets.API_TOKEN_US }}
+  API_TOKEN_CA: ${{ secrets.API_TOKEN_CA }}
+
 jobs:
   chrome:
     runs-on: ubuntu-latest
@@ -41,7 +46,6 @@ jobs:
         working-directory: ./test/webtest
         env:
           BUILD: ${{ github.ref }}-${{ github.run_id }}
-          API_TOKEN: ${{ secrets.API_TOKEN }}
         run: |
           mvn --no-transfer-progress clean verify -Dbrowser=chrome -DthreadCount=10 -Denvironment=headless
 
@@ -52,7 +56,6 @@ jobs:
       BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
       BROWSERSTACK_LOCAL_BINARY: /tmp/browserstacklocal
       BUILD: ${{ github.ref }}-${{ github.run_id }}
-      API_TOKEN: ${{ secrets.API_TOKEN }}
     steps:
       - uses: actions/checkout@v3
 

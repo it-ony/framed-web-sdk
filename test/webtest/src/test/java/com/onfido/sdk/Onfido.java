@@ -2,6 +2,7 @@ package com.onfido.sdk;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.onfido.qa.Region;
 import com.onfido.qa.configuration.Property;
 import com.onfido.qa.framedsdk.FramedPage;
 import com.onfido.qa.webdriver.Driver;
@@ -40,13 +41,17 @@ public class Onfido {
         return put("workflowLinkId", id);
     }
 
-    public Onfido withRegion(String region) {
-        return put("region", region);
+    public Onfido withRegion(Region region) {
+        return put("region", region.name());
     }
 
     public Onfido withErrorHandler(String raw) {
         errorHandler = raw;
         return this;
+    }
+
+    public Onfido withOnComplete(Raw raw) {
+        return put("onComplete", raw);
     }
 
 

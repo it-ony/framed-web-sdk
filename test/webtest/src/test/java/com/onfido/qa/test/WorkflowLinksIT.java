@@ -1,49 +1,45 @@
 package com.onfido.qa.test;
 
+import com.onfido.qa.Region;
 import com.onfido.qa.client.dto.Applicant;
 import com.onfido.qa.client.dto.ApplicantRequest;
-import com.onfido.qa.client.dto.WorkflowLink;
 import com.onfido.qa.client.dto.WorkflowLinkRequest;
 import com.onfido.qa.framedsdk.FramedPage;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import com.onfido.qa.websdk.page.Complete;
+import com.onfido.qa.websdk.page.Welcome;
+import com.onfido.sdk.Raw;
 import org.openqa.selenium.JavascriptException;
-import org.openqa.selenium.support.ui.ExpectedCondition;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.util.Locale;
-import java.util.Optional;
 import java.util.UUID;
 
+import static com.onfido.qa.Region.CA;
+import static com.onfido.qa.Region.EU;
+import static com.onfido.qa.Region.US;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@SuppressWarnings("OverlyCoupledMethod")
 public class WorkflowLinksIT extends FramedWebSdkIT {
 
-    private static WorkflowLink workflowLink = null;
+    public static final Raw RAW = new Raw("(data) => {window.onCompleteData = data}");
 
     @DataProvider
     public static Object[][] regions() {
         return new Object[][]{
-                {"EU"}, {"NA"}, {"CA"}
+                {EU}, {US}, {CA}
         };
     }
 
-    @BeforeClass
-    @SuppressWarnings("AssignmentToStaticFieldFromInstanceMethod")
-    public void beforeClass() {
-        var name = faker.name();
-        Applicant applicant = api().createApplicant(new ApplicantRequest(name.firstName(), name.lastName()));
-        workflowLink = api().createWorkflowLink(new WorkflowLinkRequest(applicant.id, workflowId()));
-    }
 
     @Test(description = "NoRegionLeadsToError")
     public void testNoRegionLeadsToError() {
 
         assertThatThrownBy(() -> {
             onfido()
-                    .withWorkflowLinkId(workflowLink.id)
+                    .withWorkflowLinkId(UUID.randomUUID())
                     .init();
         })
                 .isInstanceOf(JavascriptException.class)
@@ -51,29 +47,43 @@ public class WorkflowLinksIT extends FramedWebSdkIT {
     }
 
     @Test(description = "happy path of workflowLinks", dataProvider = "regions")
-    public void testHappyPathOfWorkflowLinks(String region) {
+    public void testHappyPathOfWorkflowLinks(Region region) throws Exception {
+
+        var api = api(region);
+        Applicant applicant = api.createApplicant(new ApplicantRequest(faker.name().firstName(), faker.name().lastName()));
+        var workflowLink = api.createWorkflowLink(new WorkflowLinkRequest(applicant.id, workflowId(region)));
 
         var framedPage = onfido()
                 .withWorkflowLinkId(workflowLink.id)
                 .withRegion(region)
+                .withOnComplete(RAW)
                 .init();
 
         var src = framedPage.frameSrc();
 
-        assertThat(src).contains(String.format("sdk.%s.onfido.app", region.toLowerCase(Locale.ROOT)));
+        assertThat(src).contains(String.format("sdk.%s.onfido.app", region.name().toLowerCase(Locale.ROOT)));
         assertThat(src).contains(workflowLink.id.toString());
+
+        var driver = driver();
+
+        framedPage.inner(() -> {
+            new Welcome(driver).continueToNextStep(Complete.class);
+        });
+
+        var completeData = framedPage.getCompleteData();
+        assertThat(completeData).isNotNull();
 
     }
 
-    protected UUID workflowId() {
-        return UUID.fromString(properties().getProperty("workflowId"));
+    protected UUID workflowId(Region region) {
+        return UUID.fromString(properties().getProperty("workflowId." + region.name().toLowerCase(Locale.ROOT)));
     }
 
     @Test(description = "error is invoked, if workflow link id doesn't exist")
     public void testErrorIsInvokedIfWorkflowLinkIdNotExist() {
         var framedPage = onfido()
                 .withWorkflowLinkId(UUID.randomUUID())
-                .withRegion("EU")
+                .withRegion(EU)
                 .withErrorHandler(FramedPage.ERROR_HANDLER)
                 .init();
 

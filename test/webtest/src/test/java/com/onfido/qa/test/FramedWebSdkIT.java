@@ -1,6 +1,7 @@
 package com.onfido.qa.test;
 
 import com.github.javafaker.Faker;
+import com.onfido.qa.Region;
 import com.onfido.qa.annotation.Browser;
 import com.onfido.qa.client.ApiClient;
 import com.onfido.qa.configuration.Property;
@@ -17,6 +18,7 @@ import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Listeners;
 
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Listeners({ScreenshotListener.class, BrowserStackListener.class})
@@ -36,8 +38,12 @@ public abstract class FramedWebSdkIT extends WebTest {
     }
 
     @SuppressWarnings("CallToSystemGetenv")
-    ApiClient api() {
-        return new ApiClient(properties().getProperty("apiUrl"), properties().getProperty("apiToken", System.getenv("API_TOKEN")));
+    ApiClient api(Region region) {
+
+        var subDomain = region.name().toLowerCase(Locale.ROOT);
+        var apiEndpoint = String.format("https://api.%s.%s", subDomain, properties().getProperty("apiHost"));
+
+        return new ApiClient(apiEndpoint, properties().getProperty("apiToken." + subDomain, System.getenv("API_TOKEN_" + region.name())));
     }
 
     @SuppressWarnings("HardcodedLineSeparator")
