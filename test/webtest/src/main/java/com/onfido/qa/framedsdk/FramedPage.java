@@ -65,7 +65,7 @@ public class FramedPage extends Page {
 
     @Override
     protected void verifyPage(Driver driver) {
-        driver.waitFor.clickable(FRAME);
+        driver.waitFor.clickable(ID);
     }
 
     public static class Error {
